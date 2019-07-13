@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: master-deployment
+  namespace: think
+  labels:
+    app: think-master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: think-master
+  template:
+    metadata:
+      labels:
+        app: think-master
+    spec:
+      containers:
+      - name: master-service
+        image: hiank/master-service:v1.0.0
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8022

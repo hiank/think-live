@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package war_pb;
+
+import "google/protobuf/any.proto";
+import "master.proto";
+
+enum War_Type {
+
+    NIL         = 0;        //NOTE: 枚举必须从0开始，这个作为站位
+    SOCCER      = 1;        //NOTE: 足球模式
+    ONEWINNER   = 2;        //NOTE: 单人决胜模式
+    TEAMWINNER  = 3;        //NOTE: 团队决胜模式
+    HUNTING     = 4;        //NOTE: 猎杀模式[计算标记]
+}
+
+//S_War_Want 想要战斗
+message S_War_Want {
+    
+    War_Type type = 1;          //NOTE: 战斗类型
+}
+
+//S_War_Do 执行操作
+message S_War_Do {
+
+    uint64 id                       = 1;        //NOTE: id，包含各种战场id信息
+    google.protobuf.Any action      = 2;        //NOTE: 玩家每次有效操作都立即上传服务器，所以动作不再是数组形式
+}
+
+
+message Team {
+
+    repeated master_pb.Role roles    = 1;        //NOTE: 每个队伍由多个模型组成
+}
+
+message War_Match {
+
+    uint64 id               = 1;        //NOTE: 玩家在战场中的id
+    int32 mapId             = 2;        //NOTE: 地图id，用于获得战场信息[前端需要，后端已经记录在arena中了]
+    repeated Team league    = 3;        //NOTE: 联盟，由多个队伍组成
+}
+
+//Tick 服务器定期下发，用于同步表现
+message Tick {
+
+    int32 index                             = 1;        //NOTE: 给Tick编号，用于区别帧顺序
+    repeated google.protobuf.Any actions    = 2;        //NOTE: 战斗信息变化, 根据收到操作指令的先后
+}
+
+//DecimalVector3 向量数据结构
+message DecimalVector3 {
+
+    string x            = 1;            //NOTE: x向量，decimal
+    string y            = 2;            //NOTE: y向量，decimal
+    string z            = 3;            //NOTE: z向量，decimal
+}
+
+//Move 移动操作，记录当前tick中移动属性
+message Move {
+
+    uint64 uid                  = 1;    //NOTE: 玩家id
+    DecimalVector3 speed        = 2;    //NOTE: 各方向上的速度
+}
+
+//Shoot 射击操作
+message Shoot {
+
+    uint64 uid                  = 1;    //NOTE: 玩家id
+    bool super                  = 2;    //NOTE: 是否是大招
+    DecimalVector3 point        = 3;    //NOTE: 点击的plane上的点
+}

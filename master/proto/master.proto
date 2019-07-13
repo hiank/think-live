@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package master_pb;
+
+option go_package = "github.com/hiank/thinkend/master/proto";
+
+message G_Master_Role {
+
+}
+
+
+message Role {
+
+    uint64  uid         = 1;            //NOTE: 玩家id，用64位，避免注册玩家过多
+    int32   modelId     = 2;            //NOTE: 模型id
+    int32   modelLv     = 3;            //NOTE: 模型等级
+    int32   cup         = 4;            //NOTE: 奖杯数，用于匹配
+    string  uname       = 5;            //NOTE: 玩家名字
+}
+

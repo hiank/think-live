@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: war-deployment
+  namespace: think
+  labels:
+    app: think-war
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: think-war
+  template:
+    metadata:
+      labels:
+        app: think-war
+    spec:
+      containers:
+      - name: war-service
+        image: hiank/war-service:v1.0.0
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8022
