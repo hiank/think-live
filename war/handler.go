@@ -98,7 +98,7 @@ func (h *Handler) handleWant(msg *pb.Message) {
 		return
 	}
 
-	gamer := &Gamer{msg, role}
+	gamer := &Gamer{msg.GetKey(), msg.GetToken(), role}
 	j := &join{gamer: gamer}
 	h.w.Join(want.GetType(), j)
 }

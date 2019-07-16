@@ -4,15 +4,27 @@ import (
 	"context"
 	"github.com/golang/glog"
 	war_pb "github.com/hiank/thinkend/war/proto"
-	"github.com/hiank/think/pool"
+	// "github.com/hiank/think/pool"
 	master_pb "github.com/hiank/thinkend/master/proto"
 )
 
 //Gamer 玩家信息
 type Gamer struct {
 
-	pool.Identifier					//NOTE: 玩家验证信息
+	key, token string
 	*master_pb.Role					//NOTE: 玩家信息
+}
+
+//GetKey 获得Gamer 连接的key
+func (gamer *Gamer) GetKey() string {
+
+	return gamer.key
+}
+
+//GetToken 获得Gamer的token
+func (gamer *Gamer) GetToken() string {
+
+	return gamer.token
 }
 
 type join struct {

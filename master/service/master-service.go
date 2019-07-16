@@ -19,30 +19,29 @@ func main() {
 	wg := new(sync.WaitGroup)
 	wg.Add(2)
 
-	ctx := context.Background()
-	go serveK8s(ctx, wg)
-	go serveWS(ctx, wg)
-	// go db.DailToRedis()
+	net.Init(context.Background())
+	go serveK8s(wg)
+	go serveWS(wg)
 
 	wg.Wait()
 }
 
-func serveK8s(ctx context.Context, wg *sync.WaitGroup) {
+func serveK8s(wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
-	if err := net.ServeK8s(ctx, "", &master.Handler{}); err != nil {
+	if err := net.ServeK8s("", &master.Handler{}); err != nil {
 
 		glog.Fatalln("serve k8s error : " + err.Error())
 	}
 }
 
 
-func serveWS(ctx context.Context, wg *sync.WaitGroup) {
+func serveWS(wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
-	if err := net.ServeWS(ctx, ""); err != nil {
+	if err := net.ServeWS(""); err != nil {
 
 		glog.Fatalln("serve ws error : " + err.Error())
 	}

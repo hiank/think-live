@@ -203,6 +203,7 @@ func (f *Fight) start() {
 
 	glog.Infoln("fight will loop")
 	ticker := time.NewTicker(time.Millisecond * 100)
+	afterChan := time.After(time.Minute * 10)
 L: 	for {
 
 		select {
@@ -228,10 +229,13 @@ L: 	for {
 
 				team.Post(anyMsg) //NOTE: 向所有客户端发送tick
 			}
+		case <-afterChan:		//NOTE: 10分钟后退出fight
+			f.Close()
+			glog.Infoln("Fight Timeout")
+			break L
 		}
 	}
 }
-
 
 func (f *Fight) doing() {
 

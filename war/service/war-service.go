@@ -21,6 +21,7 @@ func main() {
 	wg.Add(1)
 
 	ctx := context.Background()
+	net.Init(ctx)
 	go serveK8sLink(ctx, wg)
 
 	wg.Wait()
@@ -34,7 +35,7 @@ func serveK8sLink(ctx context.Context, wg *sync.WaitGroup) {
 	h := war.NewHandler(ctx)
 	defer h.Close()		//NOTE: 关闭Handler的context
 	glog.Infoln("before servek8s")
-	if e := net.ServeK8s(ctx, "", h); e != nil {
+	if e := net.ServeK8s("", h); e != nil {
 
 		glog.Fatalln("serve k8s link error : ", e)
 	}
