@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/hiank/think/pool"
+	"github.com/hiank/think/net/k8s"
 	"context"
 	"sync"
 	"flag"
@@ -32,6 +34,11 @@ func serveK8sLink(ctx context.Context, wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
+	war.SetPoolGetter(war.PoolGetter(func() *pool.Pool {
+
+		return k8s.GetK8SPool()
+	}))
+	// war.SetNetPool(k8s.GetK8SPool())
 	h := war.NewHandler(ctx)
 	defer h.Close()		//NOTE: 关闭Handler的context
 	glog.Infoln("before servek8s")

@@ -1,10 +1,11 @@
 package war
 
 import (
+	"sync"
 	"context"
 	"github.com/golang/glog"
 	war_pb "github.com/hiank/thinkend/war/proto"
-	// "github.com/hiank/think/pool"
+	"github.com/hiank/think/pool"
 	master_pb "github.com/hiank/thinkend/master/proto"
 )
 
@@ -78,3 +79,64 @@ func (w *War) Do(d *war_pb.S_War_Do) {
 		glog.Warningf("can't find battle typed : %v\n", idecode.WarType())
 	}
 }
+
+
+type PoolGetter func() *pool.Pool
+
+func (pg PoolGetter) Get() *pool.Pool {
+
+	return pg()
+}
+
+
+var poolGetter PoolGetter
+var mtx sync.RWMutex
+
+func SetPoolGetter(pg PoolGetter) {
+
+	mtx.Lock()
+	defer mtx.Unlock()
+
+	if poolGetter == nil {
+		poolGetter = pg
+	}
+}
+
+func GetNetPool() *pool.Pool {
+
+	mtx.RLock()
+	defer mtx.RUnlock()
+
+	if poolGetter == nil {
+		glog.Fatalln("poolGetter should be setted before get")
+	}
+	return poolGetter.Get()
+}
+
+
+
+// var netPool *pool.Pool
+// var mtx sync.RWMutex
+
+// //SetNetPool 设置netPool
+// func SetNetPool(p *pool.Pool) {
+
+// 	mtx.Lock()
+// 	defer mtx.Unlock()
+
+// 	if netPool == nil {
+// 		netPool = p
+// 	}
+// }
+
+// //GetNetPool 获得netPool
+// func GetNetPool() *pool.Pool {
+
+// 	mtx.RLock()
+// 	defer mtx.RUnlock()
+
+// 	if netPool == nil {
+// 		glog.Fatalln("netPool should be setted before get")
+// 	}
+// 	return netPool
+// }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/hiank/think/conf"
 	"sync"
 	"flag"
 	"strconv"
@@ -19,6 +20,16 @@ func main() {
 	flag.IntVar(&num, "n", 4, "num of client")
 	flag.Parse()
 
+	remote := &Local{}
+	confInfo, err := conf.NewInfoByFile("conf.json", remote)
+	if err != nil {
+		fmt.Println("load config file error : ", err)
+		return
+	}
+	conf.Init(confInfo)
+
+	fmt.Println("remote : ", conf.Get("Local").Val.(*Local).Remote)
+	
 	wait := new(sync.WaitGroup)
 	wait.Add(num)
 	max := num + 1001
@@ -77,7 +88,9 @@ func MakeTank(wait *sync.WaitGroup, tokenNum int) {
 
 func dail(token string) (*websocket.Conn, *http.Response, error) {
 
-	addr := "192.168.137.222:30250"
+	// addr := "192.168.137.222:30250"
+	// addr := "192.168.25.103:8022"
+	addr := conf.Get("Local").Val.(*Local).Remote
 	fmt.Printf("address : %s\n", addr)
 
 	u := url.URL{Scheme: "ws", Host: addr, Path: "/ws"}
@@ -85,5 +98,7 @@ func dail(token string) (*websocket.Conn, *http.Response, error) {
 }
 
 
-
+type Local struct {
+	Remote string 	`json:"local.Remote"`
+}
 

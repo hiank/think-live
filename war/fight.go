@@ -10,7 +10,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/glog"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/hiank/think/net/k8s"
+	// "github.com/hiank/think/net/k8s"
 	"github.com/hiank/think/pb"
 	master_pb "github.com/hiank/thinkend/master/proto"
 	war_pb "github.com/hiank/thinkend/war/proto"
@@ -81,7 +81,7 @@ func (t *Team) Post(anyMsg *any.Any) {
 	for _, gamer := range t.gamers {
 
 		// glog.Infoln("Team Post ", gamer.GetToken())
-		k8s.GetK8SPool().Post(&pb.Message{
+		GetNetPool().Post(&pb.Message{
 
 			Key:   gamer.GetKey(),
 			Token: gamer.GetToken(),
@@ -97,7 +97,7 @@ func (t *Team) PostMatched(msg *war_pb.War_Match) {
 
 		msg.Id = uint64(EncodeRoleID(t.idecode, uint32(idx+1)))
 		anyMsg, _ := ptypes.MarshalAny(msg)
-		k8s.GetK8SPool().Post(&pb.Message{
+		GetNetPool().Post(&pb.Message{
 
 			Key:   gamer.GetKey(),
 			Token: gamer.GetToken(),

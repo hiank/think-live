@@ -46,6 +46,7 @@ func (h *Handler) Handle(msg *pb.Message) (err error) {
 	}
 	name = name[strings.LastIndexByte(name, '_') + 1:]
 	glog.Infoln("message name : ", name)
+	glog.Infoln("handle key : ", msg.GetKey())
 
 	switch name {
 
