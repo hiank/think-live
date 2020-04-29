@@ -1,18 +1,23 @@
 package main
 
 import (
-	"github.com/hiank/think/conf"
-	"sync"
+	// "github.com/hiank/conf"
 	"flag"
-	"strconv"
-	"net/url"
-	"net/http"
-	"github.com/gorilla/websocket"
-	"github.com/hiank/think/pb"
-	"github.com/golang/protobuf/ptypes"
 	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
+	"sync"
+
+	"github.com/golang/protobuf/ptypes"
+	"github.com/gorilla/websocket"
+	"github.com/hiank/conf"
+	"github.com/hiank/think/pb"
 	war_pb "github.com/hiank/thinkend/war/proto"
 )
+
+
+var local = &Local{}
 
 func main() {
 
@@ -20,15 +25,17 @@ func main() {
 	flag.IntVar(&num, "n", 4, "num of client")
 	flag.Parse()
 
-	remote := &Local{}
-	confInfo, err := conf.NewInfoByFile("conf.json", remote)
-	if err != nil {
-		fmt.Println("load config file error : ", err)
-		return
-	}
-	conf.Init(confInfo)
+	conf.LoadFromFile(local, "./conf.json")
+	// settings.GetSys()
+	// remote := &Local{}
+	// confInfo, err := conf.NewInfoByFile("conf.json", remote)
+	// if err != nil {
+	// 	fmt.Println("load config file error : ", err)
+	// 	return
+	// }
+	// conf.Init(confInfo)
 
-	fmt.Println("remote : ", conf.Get("Local").Val.(*Local).Remote)
+	// fmt.Println("remote : ", conf.Get("Local").Val.(*Local).Remote)
 	
 	wait := new(sync.WaitGroup)
 	wait.Add(num)
@@ -88,9 +95,7 @@ func MakeTank(wait *sync.WaitGroup, tokenNum int) {
 
 func dail(token string) (*websocket.Conn, *http.Response, error) {
 
-	// addr := "192.168.137.222:30250"
-	// addr := "192.168.25.103:8022"
-	addr := conf.Get("Local").Val.(*Local).Remote
+	addr := local.Remote
 	fmt.Printf("address : %s\n", addr)
 
 	u := url.URL{Scheme: "ws", Host: addr, Path: "/ws"}

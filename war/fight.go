@@ -7,18 +7,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/glog"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
-	// "github.com/hiank/think/net/k8s"
+	"github.com/hiank/think/net/k8s"
 	"github.com/hiank/think/pb"
+	"github.com/hiank/think/pool"
 	master_pb "github.com/hiank/thinkend/master/proto"
 	war_pb "github.com/hiank/thinkend/war/proto"
 )
 
 //Team 队伍
 type Team struct {
-	// id        uint32   //NOTE: Team id
 	idecode   IDecode  //NOTE: 保存 War_Type FightID TeamID信息
 	gamers    []*Gamer //NOTE: 队伍中的玩家
 	maxpitnum int      //NOTE: 最大坑位数量
@@ -57,9 +57,8 @@ func (t *Team) Pit() int {
 }
 
 //Join 将gamer加入到team中
-func (t *Team) Join(j *join) (err error) {
+func (t *Team) Join(gamer *Gamer) (err error) {
 
-	gamer := j.gamer
 	if len(t.gamers) >= t.maxpitnum {
 
 		glog.Infoln("team join : ", len(t.gamers), t.maxpitnum)
@@ -77,16 +76,9 @@ func (t *Team) Join(j *join) (err error) {
 //Post 向Team中的所有玩家发送消息
 func (t *Team) Post(anyMsg *any.Any) {
 
-	// glog.Infoln("gamers num : ", len(t.gamers))
 	for _, gamer := range t.gamers {
 
-		// glog.Infoln("Team Post ", gamer.GetToken())
-		GetNetPool().Post(&pb.Message{
-
-			Key:   gamer.GetKey(),
-			Token: gamer.GetToken(),
-			Data:  anyMsg,
-		})
+		t.post(gamer, anyMsg)
 	}
 }
 
@@ -95,15 +87,20 @@ func (t *Team) PostMatched(msg *war_pb.War_Match) {
 
 	for idx, gamer := range t.gamers {
 
-		msg.Id = uint64(EncodeRoleID(t.idecode, uint32(idx+1)))
+		msg.Id = uint64(EncodeGamerID(t.idecode, uint8(idx+1)))
 		anyMsg, _ := ptypes.MarshalAny(msg)
-		GetNetPool().Post(&pb.Message{
-
-			Key:   gamer.GetKey(),
-			Token: gamer.GetToken(),
-			Data:  anyMsg,
-		})
+		t.post(gamer, anyMsg)
 	}
+}
+
+func (t *Team) post(gamer *Gamer, anyMsg *any.Any) {
+
+	pbMsg := &pb.Message{
+		Token: gamer.ToString(),
+		Data:  anyMsg,
+	}
+	var writer k8s.Writer
+	writer.Handle(pool.NewMessage(pbMsg, gamer.Derive()))
 }
 
 //ProtoTeam 转换为war_pb.Team
@@ -126,10 +123,8 @@ type Fight struct {
 	ctx   context.Context    //NOTE:
 	Close context.CancelFunc //NOTE:
 
-	idecode IDecode //NOTE: 保存War_Type fightID 信息
-	// t 			war_pb.War_Type 		//NOTE: 战斗类型
-	cup int32 //NOTE: 基础奖杯数，第一个Gamer加入进来时赋值
-	// id 			uint32					//NOTE: 战斗id
+	idecode  IDecode       //NOTE: 保存War_Type fightID 信息
+	cup      int32         //NOTE: 基础奖杯数，第一个Gamer加入进来时赋值
 	mapID    int32         //NOTE: 地图id, 用于标识不同的障碍物
 	tickIdx  int32         //NOTE: 当前tick编号, 用于生成下一个tick
 	tick     *list.List    //NOTE: 保存tick信息, 只保存有指令的tick
@@ -172,14 +167,14 @@ func NewFight(ctx context.Context, idecode IDecode, back chan *list.Element) *Fi
 		teams:   make([]*Team, 0, teamCnt),
 		back:    back,
 		cup:     -1,
-		cmd: 	 make(chan *war_pb.Tick),
+		cmd:     make(chan *war_pb.Tick),
 	}
 	return f
 }
 
 func (f *Fight) start() {
 
-	<-time.After(time.Millisecond * 300)			//NOTE: 等待0.3s 向全体客户端发送匹配完成消息
+	<-time.After(time.Millisecond * 300) //NOTE: 等待0.3s 向全体客户端发送匹配完成消息
 
 	teams := make([]*war_pb.Team, len(f.teams))
 	for i, t := range f.teams {
@@ -197,14 +192,15 @@ func (f *Fight) start() {
 		team.PostMatched(matched)
 	}
 
-	<-time.After(time.Second * 3)		//NOTE: 3s 后，战斗开始
+	<-time.After(time.Second * 3) //NOTE: 3s 后，战斗开始
 
 	go f.doing()
 
 	glog.Infoln("fight will loop")
 	ticker := time.NewTicker(time.Millisecond * 100)
 	afterChan := time.After(time.Minute * 10)
-L: 	for {
+L:
+	for {
 
 		select {
 		case <-f.ctx.Done():
@@ -229,7 +225,7 @@ L: 	for {
 
 				team.Post(anyMsg) //NOTE: 向所有客户端发送tick
 			}
-		case <-afterChan:		//NOTE: 10分钟后退出fight
+		case <-afterChan: //NOTE: 10分钟后退出fight
 			f.Close()
 			glog.Infoln("Fight Timeout")
 			break L
@@ -240,7 +236,8 @@ L: 	for {
 func (f *Fight) doing() {
 
 	glog.Infoln("Fight doing")
-L: 	for {
+L:
+	for {
 
 		select {
 		case <-f.ctx.Done():
@@ -248,12 +245,13 @@ L: 	for {
 		case tick := <-f.cmd:
 			//演算战斗
 			// glog.Infoln("doing tick : ", tick)
-			A: for _, opt := range tick.GetActions() {
+		A:
+			for _, opt := range tick.GetActions() {
 
 				name, err := ptypes.AnyMessageName(opt)
 				if err != nil {
 
-					continue A//NOTE: 应该不会出现这种情况吧
+					continue A //NOTE: 应该不会出现这种情况吧
 				}
 				switch name {
 				case "Move": //NOTE: 移动操作
@@ -288,7 +286,6 @@ func (f *Fight) optShoot(msg *war_pb.Shoot) {
 //calculate 执行下一次tick 演算
 func (f *Fight) calculate() {
 
-	
 }
 
 //GetID 得到战斗id
@@ -310,18 +307,18 @@ func (f *Fight) match() {
 			return
 		}
 	}
-	f.back <- f.Element	
-	go f.start()		//NOTE: 执行战斗开始
+	f.back <- f.Element
+	go f.start() //NOTE: 执行战斗开始
 }
 
 //Join 加入战斗，如果匹配失败，返回false，匹配成功，返回true
-func (f *Fight) Join(j *join) bool {
+func (f *Fight) Join(gamer *Gamer) bool {
 
 	f.mtx.Lock()
 	defer f.mtx.Unlock()
 
 	var team *Team
-	gamer, num := j.gamer, len(f.teams)
+	num := len(f.teams)
 
 	glog.Infoln("gamer cup : ", gamer.GetCup())
 	if f.cup == -1 {
@@ -347,10 +344,10 @@ func (f *Fight) Join(j *join) bool {
 		}
 	} else {
 
-		team = NewTeam(EncodeTeamID(f.idecode, uint32(num)))
+		team = NewTeam(EncodeTeamID(f.idecode, uint8(num)))
 		f.teams = append(f.teams, team)
 	}
-	team.Join(j)
+	team.Join(gamer)
 	f.match()
 	return true
 }
@@ -359,15 +356,12 @@ func (f *Fight) Join(j *join) bool {
 func (f *Fight) Do(d *war_pb.S_War_Do) {
 
 	f.mtx.Lock()
+	defer f.mtx.Unlock()
 
 	glog.Infoln("Fight Do : ", d)
 	if f.cmds == nil {
-
 		f.cmds = []*any.Any{d.GetAction()}
 	} else {
-
 		f.cmds = append(f.cmds, d.GetAction())
 	}
-
-	f.mtx.Unlock()
 }

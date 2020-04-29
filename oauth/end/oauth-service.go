@@ -7,7 +7,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	"gopkg.in/go-oauth2/redis.v3"
+	// "gopkg.in/go-oauth2/redis.v3"
 	"gopkg.in/oauth2.v3/errors"
 	"gopkg.in/oauth2.v3/manage"
 	"gopkg.in/oauth2.v3/models"
@@ -20,11 +20,11 @@ func main() {
 	manager := manage.NewDefaultManager()
 
 	// // token memory store
-	manager.MapTokenStorage(redis.NewRedisStore(&redis.Options{
+	// manager.MapTokenStorage(redis.NewRedisStore(&redis.Options{
 
-		Addr: "",
-		DB: 15,
-	}))
+	// 	Addr: "",
+	// 	DB: 15,
+	// }))
 
 
 	manager.MapAccessGenerate(generates.NewJWTAccessGenerate([]byte("hiank"), jwt.SigningMethodHS512))

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"sync"
 	"flag"
 	"github.com/hiank/think/net"
@@ -19,10 +18,8 @@ func main() {
 	wg := new(sync.WaitGroup)
 	wg.Add(2)
 
-	net.Init(context.Background())
 	go serveK8s(wg)
 	go serveWS(wg)
-
 	wg.Wait()
 }
 

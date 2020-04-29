@@ -26,7 +26,6 @@ type Battle struct {
 	mtx sync.RWMutex //NOTE: 战斗缓存需要读写需要上锁
 }
 
-
 //NewBattle 创建一场战役
 func NewBattle(ctx context.Context, t war_pb.War_Type) *Battle {
 
@@ -47,7 +46,8 @@ func NewBattle(ctx context.Context, t war_pb.War_Type) *Battle {
 
 func (b *Battle) loop() {
 
-L: for {
+L:
+	for {
 
 		select {
 		case <-b.ctx.Done():
@@ -63,7 +63,7 @@ L: for {
 }
 
 //Join 玩家加入战役，排队等待进入战斗
-func (b *Battle) Join(j *join) {
+func (b *Battle) Join(gamer *Gamer) {
 
 	b.mtx.Lock()
 	defer b.mtx.Unlock()
@@ -72,7 +72,7 @@ func (b *Battle) Join(j *join) {
 	for element := b.waiting.Front(); element != nil; element = element.Next() {
 
 		f := element.Value.(*Fight)
-		if f.Join(j) {
+		if f.Join(gamer) {
 			joined = true
 			break
 		}
@@ -92,7 +92,7 @@ func (b *Battle) Join(j *join) {
 
 		f := NewFight(b.ctx, EncodeFightID(b.idecode, id), b.matched)
 		f.Element = b.waiting.PushBack(f)
-		f.Join(j)
+		f.Join(gamer)
 	}
 }
 
