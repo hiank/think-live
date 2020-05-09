@@ -11,4 +11,5 @@ require (
 	github.com/hiank/think v0.0.2
 	gopkg.in/oauth2.v3 v3.12.0
 	gotest.tools v2.2.0+incompatible
+	gotest.tools/v3 v3.0.2
 )

@@ -46,9 +46,9 @@ L:
 		case <-ctx.Done():
 			break L
 		case joinReq := <-w.joinReq:
-			getBattle(joinReq.warType).Join(joinReq.data.(*Gamer))
+			getBattle(joinReq.warType).JoinReq() <- joinReq.data.(*Gamer)
 		case doReq := <-w.doReq:
-			getBattle(doReq.warType).Do(doReq.data.(*war_pb.S_War_Do))
+			getBattle(doReq.warType).DoReq() <- doReq.data.(*war_pb.S_War_Do)
 		}
 	}
 }
