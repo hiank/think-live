@@ -62,6 +62,7 @@ func (f *Fight) Start(ctx context.Context, complete chan<- uint32) {
 	go f.doing(ctx) //NOTE: 服务端演算
 
 	ticker, tickIdx, cmds := time.NewTicker(time.Millisecond*100), int32(0), []*any.Any{}
+	defer ticker.Stop()
 L:
 	for {
 		select {
